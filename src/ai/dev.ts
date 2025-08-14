@@ -1,1 +1,6 @@
-// Flows will be imported for their side effects in this file.
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/generate-recipe-with-time-constraint.ts';
+import '@/ai/flows/generate-recipe-with-style.ts';
+import '@/ai/flows/generate-recipe.ts';
