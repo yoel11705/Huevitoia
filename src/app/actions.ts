@@ -6,7 +6,7 @@ import type { GenerateRecipeInput, GenerateRecipeOutput } from "@/ai/flows/gener
 export async function generateRecipeAction(input: GenerateRecipeInput): Promise<{ data: GenerateRecipeOutput | null; error: string | null }> {
   try {
     const result = await generateRecipe(input);
-    if (!result.recipeName || !result.ingredients || !result.instructions) {
+    if (!result.recipeName || !result.ingredients || !result.instructions || !result.imageUrl) {
       console.error("AI returned incomplete data:", result);
       return { data: null, error: "The AI returned an incomplete recipe. Please try again with more specific ingredients." };
     }

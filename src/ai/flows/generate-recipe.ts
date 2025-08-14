@@ -24,6 +24,10 @@ const GenerateRecipeInputSchema = z.object({
     .describe(
       'The maximum preparation time in minutes that the recipe should take.'
     ),
+  preferences: z
+    .string()
+    .optional()
+    .describe('A list of user allergies or dietary preferences. For example: "vegetarian, gluten-free, no nuts".'),
 });
 export type GenerateRecipeInput = z.infer<typeof GenerateRecipeInputSchema>;
 
@@ -33,6 +37,7 @@ const GenerateRecipeOutputSchema = z.object({
     .string()
     .describe('A list of ingredients required for the recipe.'),
   instructions: z.string().describe('The cooking instructions for the recipe.'),
+  imageUrl: z.string().url().describe('A URL for an image of the generated dish.'),
 });
 export type GenerateRecipeOutput = z.infer<typeof GenerateRecipeOutputSchema>;
 
@@ -44,15 +49,21 @@ const prompt = ai.definePrompt({
   name: 'generateRecipePrompt',
   input: {schema: GenerateRecipeInputSchema},
   output: {schema: GenerateRecipeOutputSchema},
-  prompt: `You are a recipe creation AI. Given a list of ingredients, a cuisine style, and a maximum preparation time, you will generate a recipe that fits these constraints.
+  prompt: `You are a recipe creation AI. Given a list of ingredients, a cuisine style, a maximum preparation time, and optional dietary preferences, you will generate a recipe that fits these constraints and a URL for an image of the dish.
 
 Ingredients: {{{ingredients}}}
 Cuisine Style: {{{cuisine}}}
 Max Prep Time: {{{maxPrepTime}}} minutes
+{{#if preferences}}
+Dietary Preferences/Allergies: {{{preferences}}}
+{{/if}}
+
+Generate a recipe that adheres to all the user's constraints. Also, provide a placeholder image URL for the dish from 'https://placehold.co/600x400.png'.
 
 Recipe Name:
 Ingredients:
-Instructions:`, 
+Instructions:
+Image URL:`,
 });
 
 const generateRecipeFlow = ai.defineFlow(

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { ChefHat, UtensilsCrossed, Clock, Sparkles, Soup, Globe, Timer, AlertTriangle } from "lucide-react";
+import { ChefHat, UtensilsCrossed, Sparkles, Soup, Globe, Timer, AlertTriangle, Salad } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +40,7 @@ const formSchema = z.object({
   maxPrepTime: z.coerce.number().positive({
     message: "Time must be a positive number.",
   }).max(240, { message: "Let's be realistic, under 4 hours."}),
+  preferences: z.string().optional(),
 });
 
 export default function Home() {
@@ -52,6 +54,7 @@ export default function Home() {
       ingredients: "",
       cuisine: "Anything",
       maxPrepTime: 30,
+      preferences: "",
     },
   });
 
@@ -106,6 +109,26 @@ export default function Home() {
                       </FormControl>
                       <FormDescription>
                         List ingredients you have, separated by commas.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="preferences"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2 font-semibold"><Salad size={18} /> Allergies or Preferences</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., vegetarian, no nuts, gluten-free"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        List any dietary restrictions or preferences.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -170,6 +193,7 @@ export default function Home() {
                 <Skeleton className="h-4 w-1/2 mt-2" />
               </CardHeader>
               <CardContent className="space-y-8">
+                 <Skeleton className="w-full h-[200px] rounded-md" />
                 <div>
                   <Skeleton className="h-6 w-1/4 mb-4" />
                   <Skeleton className="h-4 w-full mb-2" />
@@ -205,6 +229,17 @@ export default function Home() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  {recipe.imageUrl && (
+                    <div className="relative w-full aspect-video rounded-md overflow-hidden">
+                       <Image
+                          src={recipe.imageUrl}
+                          alt={recipe.recipeName}
+                          layout="fill"
+                          objectFit="cover"
+                          data-ai-hint="food recipe"
+                        />
+                    </div>
+                  )}
                   <div>
                     <h3 className="font-headline text-xl font-semibold mb-3 border-b pb-2">Ingredients</h3>
                     <p className="whitespace-pre-wrap text-muted-foreground">{recipe.ingredients}</p>
