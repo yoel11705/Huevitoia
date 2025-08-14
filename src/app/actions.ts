@@ -8,12 +8,12 @@ export async function generateRecipeAction(input: GenerateRecipeInput): Promise<
     const result = await generateRecipe(input);
     if (!result.recipeName || !result.ingredients || !result.instructions || !result.imageUrl) {
       console.error("AI returned incomplete data:", result);
-      return { data: null, error: "The AI returned an incomplete recipe. Please try again with more specific ingredients." };
+      return { data: null, error: "La IA devolvió una receta incompleta. Por favor, inténtalo de nuevo con ingredientes más específicos." };
     }
     return { data: result, error: null };
   } catch (e) {
     console.error(e);
-    const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
-    return { data: null, error: `Failed to generate recipe: ${errorMessage}` };
+    const errorMessage = e instanceof Error ? e.message : "Ocurrió un error desconocido.";
+    return { data: null, error: `Error al generar la receta: ${errorMessage}` };
   }
 }

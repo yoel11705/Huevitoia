@@ -14,14 +14,14 @@ export default function AboutPage() {
             <Link href="/" passHref>
                 <Button variant="outline">
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to Recipe Generator
+                    Volver al Generador de Recetas
                 </Button>
             </Link>
         </div>
 
         <header className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold font-headline text-gray-800">How HuevitoChef AI Works</h1>
-          <p className="mt-4 text-lg text-muted-foreground">Unveiling the magic behind your personalized recipes.</p>
+          <h1 className="text-4xl md:text-5xl font-bold font-headline text-gray-800">Cómo Funciona HuevitoChef AI</h1>
+          <p className="mt-4 text-lg text-muted-foreground">Descubriendo la magia detrás de tus recetas personalizadas.</p>
         </header>
 
         <div className="grid md:grid-cols-3 gap-8 text-center">
@@ -29,30 +29,30 @@ export default function AboutPage() {
             <div className="p-4 bg-secondary rounded-full mb-4">
               <Lightbulb className="w-10 h-10 text-primary" />
             </div>
-            <h2 className="text-xl font-headline font-semibold mb-2">1. You Provide the Clues</h2>
-            <p className="text-muted-foreground">The process starts with you! You enter the ingredients you have, your dietary preferences (like allergies or "vegetarian"), the cuisine style you're craving, and your maximum prep time.</p>
+            <h2 className="text-xl font-headline font-semibold mb-2">1. Tú Proporcionas las Pistas</h2>
+            <p className="text-muted-foreground">¡El proceso comienza contigo! Ingresas los ingredientes que tienes, tus preferencias dietéticas (como alergias o "vegetariano"), el estilo de cocina que se te antoja y tu tiempo máximo de preparación.</p>
           </div>
           <div className="flex flex-col items-center">
             <div className="p-4 bg-secondary rounded-full mb-4">
               <BrainCircuit className="w-10 h-10 text-primary" />
             </div>
-            <h2 className="text-xl font-headline font-semibold mb-2">2. We Instruct the AI</h2>
-            <p className="text-muted-foreground">Your input is bundled into a specific set of instructions, called a "prompt," which is sent to Google's powerful Gemini AI model. We essentially tell the AI: "Act as a world-class chef and create a unique recipe using these exact details."</p>
+            <h2 className="text-xl font-headline font-semibold mb-2">2. Instruimos a la IA</h2>
+            <p className="text-muted-foreground">Tu información se agrupa en un conjunto específico de instrucciones, llamado "prompt", que se envía al potente modelo de IA Gemini de Google. Esencialmente, le decimos a la IA: "Actúa como un chef de clase mundial y crea una receta única usando estos detalles exactos".</p>
           </div>
           <div className="flex flex-col items-center">
             <div className="p-4 bg-secondary rounded-full mb-4">
               <Bot className="w-10 h-10 text-primary" />
             </div>
-            <h2 className="text-xl font-headline font-semibold mb-2">3. The AI Gets Creative</h2>
-            <p className="text-muted-foreground">The Gemini model, trained on a vast universe of text including countless recipes and culinary books, understands the relationships between ingredients and cooking techniques. It generates a brand new recipe—complete with a name, ingredient list, and instructions—that fits your request perfectly.</p>
+            <h2 className="text-xl font-headline font-semibold mb-2">3. La IA se Pone Creativa</h2>
+            <p className="text-muted-foreground">El modelo Gemini, entrenado en un vasto universo de texto que incluye innumerables recetas y libros de cocina, comprende las relaciones entre ingredientes y técnicas de cocina. Genera una receta completamente nueva, con nombre, lista de ingredientes e instrucciones, que se ajusta perfectamente a tu solicitud.</p>
           </div>
         </div>
 
         <Card className="mt-12 shadow-lg">
           <CardHeader>
-            <CardTitle className="font-headline text-2xl">The "Prompt" is Key</CardTitle>
+            <CardTitle className="font-headline text-2xl">La "Instrucción" (Prompt) es Clave</CardTitle>
             <CardDescription>
-              The magic is in the details. The prompt is carefully engineered to ensure the AI's output is structured, relevant, and useful. It's not just a simple question; it's a command that guides the AI's creative process. The core of this logic lives in the file <code className="bg-muted text-muted-foreground px-1 py-0.5 rounded text-sm">src/ai/flows/generate-recipe.ts</code> in our application's code.
+              La magia está en los detalles. El prompt está cuidadosamente diseñado para garantizar que el resultado de la IA sea estructurado, relevante y útil. No es solo una simple pregunta; es una orden que guía el proceso creativo de la IA. El núcleo de esta lógica reside en el archivo <code className="bg-muted text-muted-foreground px-1 py-0.5 rounded text-sm">src/ai/flows/generate-recipe.ts</code> en el código de nuestra aplicación.
             </CardDescription>
           </CardHeader>
         </Card>

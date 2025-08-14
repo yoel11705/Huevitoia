@@ -35,12 +35,12 @@ import { generateRecipeAction } from './actions';
 
 const formSchema = z.object({
   ingredients: z.string().min(10, {
-    message: "Please list at least a few ingredients.",
+    message: "Por favor, enumera al menos algunos ingredientes.",
   }),
   cuisine: z.string(),
   maxPrepTime: z.coerce.number().positive({
-    message: "Time must be a positive number.",
-  }).max(240, { message: "Let's be realistic, under 4 hours."}),
+    message: "El tiempo debe ser un número positivo.",
+  }).max(240, { message: "Seamos realistas, menos de 4 horas."}),
   preferences: z.string().optional(),
 });
 
@@ -53,7 +53,7 @@ export default function Home() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       ingredients: "",
-      cuisine: "Anything",
+      cuisine: "Cualquiera",
       maxPrepTime: 30,
       preferences: "",
     },
@@ -82,15 +82,15 @@ export default function Home() {
         </div>
         <h1 className="text-4xl md:text-6xl font-bold font-headline text-gray-800">HuevitoChef</h1>
         <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-          No idea what to cook? Give me your ingredients and I'll whip up a delicious recipe for you in seconds.
+          ¿No tienes idea de qué cocinar? Dame tus ingredientes y prepararé una deliciosa receta para ti en segundos.
         </p>
       </header>
 
       <main className="grid md:grid-cols-2 gap-8 lg:gap-12">
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle className="font-headline text-2xl">Create Your Recipe</CardTitle>
-            <CardDescription>Tell us what you have and what you're in the mood for.</CardDescription>
+            <CardTitle className="font-headline text-2xl">Crea Tu Receta</CardTitle>
+            <CardDescription>Dinos qué tienes y de qué tienes ganas.</CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -100,16 +100,16 @@ export default function Home() {
                   name="ingredients"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex items-center gap-2 font-semibold"><Soup size={18} /> Ingredients</FormLabel>
+                      <FormLabel className="flex items-center gap-2 font-semibold"><Soup size={18} /> Ingredientes</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="e.g., chicken breast, tomatoes, onions, garlic, olive oil"
+                          placeholder="ej., pechuga de pollo, tomates, cebolla, ajo, aceite de oliva"
                           className="min-h-[120px] resize-y"
                           {...field}
                         />
                       </FormControl>
                       <FormDescription>
-                        List ingredients you have, separated by commas.
+                        Enumera los ingredientes que tienes, separados por comas.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -121,15 +121,15 @@ export default function Home() {
                   name="preferences"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="flex items-center gap-2 font-semibold"><Salad size={18} /> Allergies or Preferences</FormLabel>
+                      <FormLabel className="flex items-center gap-2 font-semibold"><Salad size={18} /> Alergias o Preferencias</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="e.g., vegetarian, no nuts, gluten-free"
+                          placeholder="ej., vegetariano, sin frutos secos, sin gluten"
                           {...field}
                         />
                       </FormControl>
                       <FormDescription>
-                        List any dietary restrictions or preferences.
+                        Enumera cualquier restricción o preferencia dietética.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -142,20 +142,20 @@ export default function Home() {
                     name="cuisine"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="flex items-center gap-2 font-semibold"><Globe size={18} /> Cuisine Style</FormLabel>
+                        <FormLabel className="flex items-center gap-2 font-semibold"><Globe size={18} /> Estilo de Cocina</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a cuisine" />
+                              <SelectValue placeholder="Selecciona un estilo" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="Anything">Anything</SelectItem>
-                            <SelectItem value="Mexican">Mexican</SelectItem>
-                            <SelectItem value="Italian">Italian</SelectItem>
-                            <SelectItem value="Asian">Asian</SelectItem>
-                            <SelectItem value="American">American</SelectItem>
-                            <SelectItem value="Mediterranean">Mediterranean</SelectItem>
+                            <SelectItem value="Cualquiera">Cualquiera</SelectItem>
+                            <SelectItem value="Mexicana">Mexicana</SelectItem>
+                            <SelectItem value="Italiana">Italiana</SelectItem>
+                            <SelectItem value="Asiática">Asiática</SelectItem>
+                            <SelectItem value="Americana">Americana</SelectItem>
+                            <SelectItem value="Mediterránea">Mediterránea</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -167,7 +167,7 @@ export default function Home() {
                     name="maxPrepTime"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="flex items-center gap-2 font-semibold"><Timer size={18} /> Max Prep Time (min)</FormLabel>
+                        <FormLabel className="flex items-center gap-2 font-semibold"><Timer size={18} /> Tiempo Máx. (min)</FormLabel>
                         <FormControl>
                           <Input type="number" placeholder="e.g., 30" {...field} />
                         </FormControl>
@@ -178,7 +178,7 @@ export default function Home() {
                 </div>
                 
                 <Button type="submit" disabled={isLoading} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-bold text-lg py-6">
-                  {isLoading ? 'Generating...' : 'Generate Recipe'}
+                  {isLoading ? 'Generando...' : 'Generar Receta'}
                   <UtensilsCrossed className="ml-2 h-5 w-5" />
                 </Button>
               </form>
@@ -226,7 +226,7 @@ export default function Home() {
                   <CardTitle className="font-headline text-3xl">{recipe.recipeName}</CardTitle>
                   <CardDescription className="flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-primary" />
-                    Generated just for you by HuevitoChef AI.
+                    Generado solo para ti por HuevitoChef AI.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -242,11 +242,11 @@ export default function Home() {
                     </div>
                   )}
                   <div>
-                    <h3 className="font-headline text-xl font-semibold mb-3 border-b pb-2">Ingredients</h3>
+                    <h3 className="font-headline text-xl font-semibold mb-3 border-b pb-2">Ingredientes</h3>
                     <p className="whitespace-pre-wrap text-muted-foreground">{recipe.ingredients}</p>
                   </div>
                   <div>
-                    <h3 className="font-headline text-xl font-semibold mb-3 border-b pb-2">Instructions</h3>
+                    <h3 className="font-headline text-xl font-semibold mb-3 border-b pb-2">Instrucciones</h3>
                     <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground">{recipe.instructions}</p>
                   </div>
                 </CardContent>
@@ -258,8 +258,8 @@ export default function Home() {
               <div className="p-4 bg-secondary rounded-full mb-4">
                 <ChefHat className="w-16 h-16 text-muted-foreground/50" />
               </div>
-              <h3 className="text-2xl font-semibold font-headline text-muted-foreground">Ready to Cook?</h3>
-              <p className="text-muted-foreground mt-2 max-w-xs">Your delicious, AI-generated recipe will appear here.</p>
+              <h3 className="text-2xl font-semibold font-headline text-muted-foreground">¿Listo para Cocinar?</h3>
+              <p className="text-muted-foreground mt-2 max-w-xs">Tu deliciosa receta generada por IA aparecerá aquí.</p>
             </div>
           )}
         </div>
@@ -267,7 +267,7 @@ export default function Home() {
       <footer className="text-center mt-12">
         <Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-2">
           <Info size={16} />
-          How does this work?
+          ¿Cómo funciona esto?
         </Link>
       </footer>
     </div>
