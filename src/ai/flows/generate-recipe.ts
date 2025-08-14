@@ -37,7 +37,7 @@ const GenerateRecipeOutputSchema = z.object({
     .string()
     .describe('A list of ingredients required for the recipe.'),
   instructions: z.string().describe('The cooking instructions for the recipe.'),
-  imageUrl: z.string().url().describe('A URL for an image of the generated dish.'),
+  imageUrl: z.string().describe('A URL for an image of the generated dish.'),
 });
 export type GenerateRecipeOutput = z.infer<typeof GenerateRecipeOutputSchema>;
 
