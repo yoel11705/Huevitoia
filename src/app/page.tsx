@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { ChefHat, UtensilsCrossed, Sparkles, Soup, Globe, Timer, AlertTriangle, Salad } from "lucide-react";
+import { ChefHat, UtensilsCrossed, Sparkles, Soup, Globe, Timer, AlertTriangle, Salad, Info } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -263,6 +264,12 @@ export default function Home() {
           )}
         </div>
       </main>
+      <footer className="text-center mt-12">
+        <Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-2">
+          <Info size={16} />
+          How does this work?
+        </Link>
+      </footer>
     </div>
   );
 }
