@@ -162,7 +162,7 @@ export default function Home() {
         return;
     }
     
-    const resultId = await saveRecipeAction(recipeToSave);
+    const resultId = await saveRecipeAction(recipeToSave, user.uid);
     
     if (resultId) {
         toast({
@@ -288,6 +288,7 @@ export default function Home() {
                      <RecipeCard recipe={message.recipeData} onSave={handleSaveRecipe} />
                  ) : (
                      <p className="text-sm leading-relaxed">{message.content}</p>
+
                  )}
             </div>
              {message.sender === 'user' && (

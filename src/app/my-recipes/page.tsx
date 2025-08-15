@@ -26,7 +26,7 @@ export default function MyRecipesPage() {
         setLoading(true);
         setError(null);
         try {
-          const savedRecipes = await getSavedRecipes();
+          const savedRecipes = await getSavedRecipes(user.uid);
           if (savedRecipes) {
             setRecipes(savedRecipes as SavedRecipe[]);
           }
@@ -79,7 +79,12 @@ export default function MyRecipesPage() {
         {error && <p className="text-center text-destructive">{error}</p>}
 
         {!loading && !error && recipes.length === 0 && (
-          <p className="text-center text-muted-foreground">Aún no has guardado ninguna receta. ¡Crea una nueva y guárdala aquí!</p>
+          <div className="text-center py-10">
+            <p className="text-muted-foreground">Aún no has guardado ninguna receta.</p>
+             <Link href="/" passHref>
+                <Button className="mt-4">Crear una nueva receta</Button>
+            </Link>
+          </div>
         )}
 
         {!loading && !error && recipes.length > 0 && (
