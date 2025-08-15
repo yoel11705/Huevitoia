@@ -1,3 +1,4 @@
+
 "use server";
 
 import { generateRecipe } from "@/ai/flows/generate-recipe";
@@ -5,7 +6,6 @@ import type { GenerateRecipeInput, GenerateRecipeOutput } from "@/ai/flows/recip
 
 export async function generateRecipeAction(input: GenerateRecipeInput): Promise<{ data: GenerateRecipeOutput & {imageUrl: string} | null; error: string | null }> {
   try {
-    // The flow now returns the image URL directly.
     const result = await generateRecipe(input);
 
     if (!result.recipeName || !result.ingredients || !result.instructions) {

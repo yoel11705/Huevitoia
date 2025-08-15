@@ -4,13 +4,12 @@
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ChefHat, UtensilsCrossed, Sparkles, User, Bot, Info, Send, CornerDownLeft, Salad, Soup, Globe, Timer, LogOut, BookMarked, History } from "lucide-react";
+import { ChefHat, UtensilsCrossed, Sparkles, User, Bot, Info, Send, CornerDownLeft, Salad, Soup, Globe, Timer, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { generateRecipeAction } from './actions';
-import { saveRecipe as saveRecipeAction } from './my-recipes/actions';
 import type { GenerateRecipeOutput } from "@/ai/flows/recipe-schemas";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from '@/context/AuthContext';
@@ -159,11 +158,6 @@ export default function Home() {
     } else {
         const recipeResult = result.data as RecipeResult;
         
-        // Auto-save the recipe to history
-        if (user) {
-            await saveRecipeAction(recipeResult, user.uid);
-        }
-
         setMessages(prev => [...prev, { id: Date.now() + 2, sender: 'bot', content: "¡Aquí tienes tu receta!", icon: <UtensilsCrossed />, recipeData: recipeResult }]);
         setStage('done');
     }
@@ -223,11 +217,6 @@ export default function Home() {
         <div className="flex gap-2">
            {user && (
              <>
-                <Link href="/my-recipes" passHref>
-                  <Button variant="outline" size="icon" aria-label="Historial de recetas">
-                      <History />
-                  </Button>
-                </Link>
                 <Button variant="outline" onClick={handleLogout}>
                     <LogOut className="mr-2" />
                     Salir
