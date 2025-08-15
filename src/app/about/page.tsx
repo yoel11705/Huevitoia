@@ -20,7 +20,7 @@ export default function AboutPage() {
         </div>
 
         <header className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold font-headline text-gray-800">Cómo Funciona HuevitoChef AI</h1>
+          <h1 className="text-4xl md:text-5xl font-bold font-headline text-gray-800">Cómo Funciona HuevitoIa</h1>
           <p className="mt-4 text-lg text-muted-foreground">Descubriendo la magia detrás de tus recetas personalizadas.</p>
         </header>
 

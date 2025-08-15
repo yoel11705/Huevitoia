@@ -54,7 +54,7 @@ export default function MyRecipesPage() {
         </div>
 
         <header className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold font-headline text-gray-800">Mis Recetas Guardadas</h1>
+          <h1 className="text-4xl md:text-5xl font-bold font-headline text-gray-800">Historial de Recetas</h1>
           <p className="mt-4 text-lg text-muted-foreground">Tu colección personal de creaciones culinarias.</p>
         </header>
 

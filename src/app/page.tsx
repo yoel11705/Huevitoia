@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ChefHat, UtensilsCrossed, Sparkles, User, Bot, Info, Send, CornerDownLeft, Salad, Soup, Globe, Timer, LogOut, BookMarked, Save } from "lucide-react";
+import { ChefHat, UtensilsCrossed, Sparkles, User, Bot, Info, Send, CornerDownLeft, Salad, Soup, Globe, Timer, LogOut, BookMarked, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -32,7 +32,7 @@ type Message = {
 type ConversationStage = 'start' | 'get_preferences' | 'get_ingredients' | 'get_cuisine' | 'get_time' | 'generating' | 'done' | 'error';
 
 const initialMessages: Message[] = [
-  { id: 1, sender: 'bot', content: '¡Hola! Soy HuevitoChef. Estoy aquí para ayudarte a crear una receta deliciosa con los ingredientes que tienes en casa.', icon: <Salad /> },
+  { id: 1, sender: 'bot', content: '¡Hola! Soy HuevitoIa. Estoy aquí para ayudarte a crear una receta deliciosa con los ingredientes que tienes en casa.', icon: <Salad /> },
   { id: 2, sender: 'bot', content: 'Primero, ¿tienes alguna alergia o preferencia dietética? (ej. vegetariano, sin gluten, alergia a los frutos secos). Si no tienes ninguna, solo escribe "ninguna".', icon: <Salad /> },
 ];
 
@@ -124,7 +124,7 @@ export default function Home() {
             updatedRecipeData.maxPrepTime = time;
             nextStage = 'generating';
             setIsLoading(true);
-            generateRecipe(updatedRecipeData);
+            generateAndSaveRecipe(updatedRecipeData);
         }
         break;
     }
@@ -143,42 +143,7 @@ export default function Home() {
     }
   };
 
-  const handleSaveRecipe = async (recipeToSave: RecipeResult | undefined) => {
-    if (!user) {
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Debes iniciar sesión para guardar una receta.",
-        });
-        router.push('/login');
-        return;
-    }
-    if (!recipeToSave) {
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "No hay datos de receta para guardar.",
-        });
-        return;
-    }
-    
-    const resultId = await saveRecipeAction(recipeToSave, user.uid);
-    
-    if (resultId) {
-        toast({
-            title: "¡Receta Guardada!",
-            description: "Tu receta ha sido guardada en tu colección.",
-        });
-    } else {
-        toast({
-            variant: "destructive",
-            title: "Error al Guardar",
-            description: "No se pudo guardar la receta. Inténtalo de nuevo.",
-        });
-    }
-  }
-
-  const generateRecipe = async (data: typeof recipeData) => {
+  const generateAndSaveRecipe = async (data: typeof recipeData) => {
     const result = await generateRecipeAction({
         preferences: data.preferences === 'ninguna' ? '' : data.preferences,
         ingredients: data.ingredients,
@@ -193,6 +158,12 @@ export default function Home() {
         setStage('error');
     } else {
         const recipeResult = result.data as RecipeResult;
+        
+        // Auto-save the recipe to history
+        if (user) {
+            await saveRecipeAction(recipeResult, user.uid);
+        }
+
         setMessages(prev => [...prev, { id: Date.now() + 2, sender: 'bot', content: "¡Aquí tienes tu receta!", icon: <UtensilsCrossed />, recipeData: recipeResult }]);
         setStage('done');
     }
@@ -209,7 +180,7 @@ export default function Home() {
     setRecipeData({ preferences: '', ingredients: '', cuisine: '', maxPrepTime: 0 });
   }
 
-  const RecipeCard = ({ recipe, onSave }: { recipe: RecipeResult; onSave: (recipe: RecipeResult) => void; }) => (
+  const RecipeCard = ({ recipe }: { recipe: RecipeResult }) => (
       <Card className="shadow-lg animate-in fade-in-50">
           <CardHeader>
               <CardTitle className="font-headline text-3xl">{recipe.recipeName}</CardTitle>
@@ -235,13 +206,6 @@ export default function Home() {
                   <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground">{recipe.instructions}</p>
               </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-2">
-             <Button onClick={() => onSave(recipe)} className="w-full" disabled={!user}>
-                  <Save className="mr-2" />
-                  Guardar Receta
-              </Button>
-              {!user && <p className="text-xs text-muted-foreground">Debes iniciar sesión para guardar.</p>}
-          </CardFooter>
       </Card>
   );
 
@@ -253,15 +217,15 @@ export default function Home() {
           <div className="inline-block bg-primary p-2 rounded-full mb-2 shadow-md">
             <ChefHat className="h-8 w-8 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold font-headline text-gray-800">HuevitoChef</h1>
+          <h1 className="text-2xl md:text-3xl font-bold font-headline text-gray-800">HuevitoIa</h1>
           <p className="text-sm text-muted-foreground">Tu asistente de cocina personal.</p>
         </div>
         <div className="flex gap-2">
            {user && (
              <>
                 <Link href="/my-recipes" passHref>
-                  <Button variant="outline" size="icon" aria-label="Mis recetas">
-                      <BookMarked />
+                  <Button variant="outline" size="icon" aria-label="Historial de recetas">
+                      <History />
                   </Button>
                 </Link>
                 <Button variant="outline" onClick={handleLogout}>
@@ -285,7 +249,7 @@ export default function Home() {
             )}
             <div className={`max-w-md lg:max-w-xl rounded-2xl px-4 py-3 shadow ${message.sender === 'user' ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-background text-foreground rounded-bl-none'}`}>
                  {message.recipeData ? (
-                     <RecipeCard recipe={message.recipeData} onSave={handleSaveRecipe} />
+                     <RecipeCard recipe={message.recipeData} />
                  ) : (
                      <p className="text-sm leading-relaxed">{message.content}</p>
 

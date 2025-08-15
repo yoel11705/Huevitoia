@@ -44,7 +44,7 @@ export default function SignupPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Crear Cuenta</CardTitle>
-          <CardDescription>Únete a HuevitoChef para guardar tus recetas.</CardDescription>
+          <CardDescription>Únete a HuevitoIa para guardar tus recetas.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignup} className="space-y-4">

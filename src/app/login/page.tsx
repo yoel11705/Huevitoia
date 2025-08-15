@@ -43,7 +43,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl font-bold">Iniciar Sesión</CardTitle>
-          <CardDescription>Ingresa a tu cuenta de HuevitoChef.</CardDescription>
+          <CardDescription>Ingresa a tu cuenta de HuevitoIa.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">

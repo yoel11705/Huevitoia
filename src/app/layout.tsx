@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { AuthProvider } from '@/context/AuthContext';
 
 export const metadata: Metadata = {
-  title: 'HuevitoChef',
+  title: 'HuevitoIa',
   description: 'Genera recetas con IA a base de tus ingredientes.',
 };
 
