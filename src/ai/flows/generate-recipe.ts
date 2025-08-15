@@ -27,7 +27,8 @@ const generateRecipeFlow = ai.defineFlow(
   },
   async input => {
     
-    const { output } = await ai.generate({
+    // First, generate the recipe text content.
+    const { output: recipeOutput } = await ai.generate({
         model: 'googleai/gemini-2.0-flash',
         output: { schema: GenerateRecipeOutputSchema },
         prompt: `You are a recipe creation AI. Given a list of ingredients, a cuisine style, a maximum preparation time, and optional dietary preferences, your task is to generate a recipe that fits these constraints.
@@ -43,14 +44,14 @@ Please generate a creative and delicious recipe based on this information. The e
     });
 
 
-    if (!output) {
-      throw new Error("Failed to generate recipe.");
+    if (!recipeOutput) {
+      throw new Error("Failed to generate recipe text.");
     }
 
-    // Generate an image in parallel
+    // In parallel, generate an image for the recipe.
     const { media } = await ai.generate({
         model: 'googleai/gemini-2.0-flash-preview-image-generation',
-        prompt: `A delicious-looking, professionally photographed image of a dish called "${output.recipeName}"`,
+        prompt: `A delicious-looking, professionally photographed image of a dish called "${recipeOutput.recipeName}"`,
         config: {
             responseModalities: ['TEXT', 'IMAGE'],
         },
@@ -58,6 +59,6 @@ Please generate a creative and delicious recipe based on this information. The e
 
     const imageUrl = media?.url || `https://placehold.co/600x400.png`;
 
-    return {...output, imageUrl };
+    return {...recipeOutput, imageUrl };
   }
 );
