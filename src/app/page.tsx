@@ -31,6 +31,10 @@ const initialMessages: Message[] = [
   { id: 2, sender: 'bot', content: 'Primero, ¿tienes alguna alergia o preferencia dietética? (ej. vegetariano, sin gluten, alergia a los frutos secos). Si no tienes ninguna, solo escribe "ninguna".', icon: <Salad /> },
 ];
 
+// Simple regex to check for presence of letters
+const hasLetters = (text: string) => /[a-zA-Z]/.test(text);
+
+
 export default function Home() {
   const { user } = useAuth();
   const router = useRouter();
@@ -66,30 +70,45 @@ export default function Home() {
 
   const processUserInput = async (input: string) => {
     let nextStage: ConversationStage = stage;
-    let botMessageContent: string = '';
+    let botMessageContent: string | null = null;
     let botIcon: React.ReactNode = null;
     let updatedRecipeData = { ...recipeData };
 
     switch (stage) {
       case 'get_preferences':
-        updatedRecipeData.preferences = input;
-        botMessageContent = "¡Entendido! Ahora, por favor, dime qué ingredientes tienes. Sepáralos por comas (ej. pollo, arroz, brócoli).";
-        botIcon = <Soup />;
-        nextStage = 'get_ingredients';
+        if (!hasLetters(input)) {
+            botMessageContent = "Por favor, introduce preferencias válidas o escribe 'ninguna'.";
+            nextStage = 'get_preferences';
+        } else {
+            updatedRecipeData.preferences = input;
+            botMessageContent = "¡Entendido! Ahora, por favor, dime qué ingredientes tienes. Sepáralos por comas (ej. pollo, arroz, brócoli).";
+            botIcon = <Soup />;
+            nextStage = 'get_ingredients';
+        }
         break;
       
       case 'get_ingredients':
-        updatedRecipeData.ingredients = input;
-        botMessageContent = "Perfecto. ¿Qué estilo de cocina te apetece? (ej. Mexicana, Italiana, Asiática, o 'cualquiera')";
-        botIcon = <Globe />;
-        nextStage = 'get_cuisine';
+        if (!hasLetters(input)) {
+            botMessageContent = "Parece que eso no son ingredientes. Por favor, introduce una lista de ingredientes válidos.";
+            nextStage = 'get_ingredients';
+        } else {
+            updatedRecipeData.ingredients = input;
+            botMessageContent = "Perfecto. ¿Qué estilo de cocina te apetece? (ej. Mexicana, Italiana, Asiática, o 'cualquiera')";
+            botIcon = <Globe />;
+            nextStage = 'get_cuisine';
+        }
         break;
 
       case 'get_cuisine':
-        updatedRecipeData.cuisine = input;
-        botMessageContent = "¡Suena bien! Por último, ¿cuál es el tiempo máximo de preparación en minutos? (ej. 30)";
-        botIcon = <Timer />;
-        nextStage = 'get_time';
+         if (!hasLetters(input)) {
+            botMessageContent = "Por favor, introduce un estilo de cocina válido o escribe 'cualquiera'.";
+            nextStage = 'get_cuisine';
+        } else {
+            updatedRecipeData.cuisine = input;
+            botMessageContent = "¡Suena bien! Por último, ¿cuál es el tiempo máximo de preparación en minutos? (ej. 30)";
+            botIcon = <Timer />;
+            nextStage = 'get_time';
+        }
         break;
       
       case 'get_time':
@@ -109,13 +128,15 @@ export default function Home() {
     
     setRecipeData(updatedRecipeData);
 
-    if (nextStage !== 'generating') {
+    if (botMessageContent) {
         setTimeout(() => {
-            setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'bot', content: botMessageContent, icon: botIcon }]);
+            setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'bot', content: botMessageContent!, icon: botIcon }]);
             setStage(nextStage);
         }, 500);
-    } else {
-        setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'bot', content: botMessageContent, icon: <Sparkles className="animate-pulse" /> }]);
+    }
+    
+    if (nextStage === 'generating') {
+        setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'bot', content: "¡Genial! Estoy buscando la receta perfecta para ti. Esto puede tardar un momento...", icon: <Sparkles className="animate-pulse" /> }]);
         setStage(nextStage);
     }
   };
