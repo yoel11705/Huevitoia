@@ -3,10 +3,10 @@
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ChefHat, UtensilsCrossed, Sparkles, User, Bot, Info, Send, CornerDownLeft, Salad, Soup, Globe, Timer, LogOut, BookMarked } from "lucide-react";
+import { ChefHat, UtensilsCrossed, Sparkles, User, Bot, Info, Send, CornerDownLeft, Salad, Soup, Globe, Timer, LogOut, BookMarked, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { generateRecipeAction } from './actions';
 import type { GenerateRecipeOutput } from "@/ai/flows/recipe-schemas";
@@ -15,6 +15,7 @@ import { useAuth } from '@/context/AuthContext';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { useToast } from "@/hooks/use-toast";
 
 
 type Message = {
@@ -38,6 +39,7 @@ const hasLetters = (text: string) => /[a-zA-Z]/.test(text);
 export default function Home() {
   const { user } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [userInput, setUserInput] = useState('');
@@ -141,6 +143,13 @@ export default function Home() {
     }
   };
 
+  const handleSaveRecipe = () => {
+    toast({
+        title: "Función no implementada",
+        description: "La capacidad de guardar recetas estará disponible pronto.",
+    });
+  }
+
   const generateRecipe = async (data: typeof recipeData) => {
     const result = await generateRecipeAction({
         preferences: data.preferences,
@@ -167,7 +176,7 @@ export default function Home() {
                        <Image
                           src={recipeResult.imageUrl}
                           alt={recipeResult.recipeName}
-                          layout="fill"
+                          fill
                           objectFit="cover"
                           data-ai-hint="food recipe"
                         />
@@ -182,6 +191,12 @@ export default function Home() {
                     <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground">{recipeResult.instructions}</p>
                   </div>
                 </CardContent>
+                <CardFooter>
+                    <Button onClick={handleSaveRecipe} className="w-full">
+                        <Save className="mr-2" />
+                        Guardar Receta
+                    </Button>
+                </CardFooter>
               </Card>
         );
         setMessages(prev => [...prev, { id: Date.now() + 2, sender: 'bot', content: "¡Aquí tienes tu receta!", icon: <UtensilsCrossed /> }, { id: Date.now() + 3, sender: 'bot', content: recipeCard }]);
@@ -215,8 +230,9 @@ export default function Home() {
             <Button variant="outline" size="icon" disabled>
                 <BookMarked />
             </Button>
-            <Button variant="outline" size="icon" onClick={handleLogout}>
-                <LogOut />
+            <Button variant="outline" onClick={handleLogout}>
+                <LogOut className="mr-2" />
+                Salir
             </Button>
         </div>
       </header>
