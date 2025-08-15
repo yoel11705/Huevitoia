@@ -144,6 +144,15 @@ export default function Home() {
   };
 
   const handleSaveRecipe = async (recipeToSave: RecipeResult | undefined) => {
+    if (!user) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Debes iniciar sesión para guardar una receta.",
+        });
+        router.push('/login');
+        return;
+    }
     if (!recipeToSave) {
         toast({
             variant: "destructive",
@@ -171,7 +180,7 @@ export default function Home() {
 
   const generateRecipe = async (data: typeof recipeData) => {
     const result = await generateRecipeAction({
-        preferences: data.preferences,
+        preferences: data.preferences === 'ninguna' ? '' : data.preferences,
         ingredients: data.ingredients,
         cuisine: data.cuisine,
         maxPrepTime: data.maxPrepTime,
@@ -226,11 +235,12 @@ export default function Home() {
                   <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground">{recipe.instructions}</p>
               </div>
           </CardContent>
-          <CardFooter>
-              <Button onClick={() => onSave(recipe)} className="w-full">
+          <CardFooter className="flex flex-col gap-2">
+             <Button onClick={() => onSave(recipe)} className="w-full" disabled={!user}>
                   <Save className="mr-2" />
                   Guardar Receta
               </Button>
+              {!user && <p className="text-xs text-muted-foreground">Debes iniciar sesión para guardar.</p>}
           </CardFooter>
       </Card>
   );
@@ -247,15 +257,19 @@ export default function Home() {
           <p className="text-sm text-muted-foreground">Tu asistente de cocina personal.</p>
         </div>
         <div className="flex gap-2">
-            <Link href="/my-recipes" passHref>
-              <Button variant="outline" size="icon">
-                  <BookMarked />
-              </Button>
-            </Link>
-            <Button variant="outline" onClick={handleLogout}>
-                <LogOut className="mr-2" />
-                Salir
-            </Button>
+           {user && (
+             <>
+                <Link href="/my-recipes" passHref>
+                  <Button variant="outline" size="icon" aria-label="Mis recetas">
+                      <BookMarked />
+                  </Button>
+                </Link>
+                <Button variant="outline" onClick={handleLogout}>
+                    <LogOut className="mr-2" />
+                    Salir
+                </Button>
+             </>
+           )}
         </div>
       </header>
       
@@ -270,12 +284,10 @@ export default function Home() {
               </Avatar>
             )}
             <div className={`max-w-md lg:max-w-xl rounded-2xl px-4 py-3 shadow ${message.sender === 'user' ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-background text-foreground rounded-bl-none'}`}>
-                 {typeof message.content === 'string' ? (
-                     <p className="text-sm leading-relaxed">{message.content}</p>
-                 ) : message.recipeData ? (
+                 {message.recipeData ? (
                      <RecipeCard recipe={message.recipeData} onSave={handleSaveRecipe} />
                  ) : (
-                     message.content
+                     <p className="text-sm leading-relaxed">{message.content}</p>
                  )}
             </div>
              {message.sender === 'user' && (
@@ -296,9 +308,8 @@ export default function Home() {
                 </Avatar>
                 <div className="max-w-md lg:max-w-xl rounded-2xl px-4 py-3 shadow bg-background text-foreground rounded-bl-none">
                    <div className="flex items-center gap-2">
-                     <Skeleton className="w-2 h-2 rounded-full animate-bounce" />
-                     <Skeleton className="w-2 h-2 rounded-full animate-bounce delay-150" />
-                     <Skeleton className="w-2 h-2 rounded-full animate-bounce delay-300" />
+                     <p className="text-sm">Creando tu receta...</p>
+                     <Sparkles className="h-4 w-4 animate-pulse" />
                    </div>
                 </div>
             </div>
