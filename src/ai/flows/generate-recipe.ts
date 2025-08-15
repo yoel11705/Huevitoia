@@ -23,20 +23,19 @@ const prompt = ai.definePrompt({
   name: 'generateRecipePrompt',
   input: {schema: GenerateRecipeInputSchema},
   output: {schema: GenerateRecipeOutputSchema},
-  prompt: `You are a recipe creation AI. Given a list of ingredients, a cuisine style, a maximum preparation time, and optional dietary preferences, you will generate a recipe that fits these constraints. The entire output, including the recipe name, ingredients, and instructions, MUST be in Spanish.
+  prompt: `You are a recipe creation AI. Given a list of ingredients, a cuisine style, a maximum preparation time, and optional dietary preferences, your task is to generate a recipe that fits these constraints. 
 
-Ingredients: {{{ingredients}}}
-Cuisine Style: {{{cuisine}}}
-Max Prep Time: {{{maxPrepTime}}} minutes
+You must generate the output in Spanish.
+
+The user has provided the following:
+- Ingredients: {{{ingredients}}}
+- Cuisine Style: {{{cuisine}}}
+- Max Prep Time: {{{maxPrepTime}}} minutes
 {{#if preferences}}
-Dietary Preferences/Allergies: {{{preferences}}}
+- Dietary Preferences/Allergies: {{{preferences}}}
 {{/if}}
 
-Generate a recipe that adheres to all the user's constraints. The output must be in Spanish.
-
-Recipe Name:
-Ingredients:
-Instructions:
+Please generate a creative and delicious recipe based on this information. The entire output, including the recipe name, ingredients, and instructions, MUST be in Spanish.
 `,
 });
 
