@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ChefHat, UtensilsCrossed, Sparkles, User, Bot, Info, Send, CornerDownLeft, Salad, Soup, Globe, Timer } from "lucide-react";
+import { ChefHat, UtensilsCrossed, Sparkles, User, Bot, Info, Send, CornerDownLeft, Salad, Soup, Globe, Timer, LogOut, BookMarked } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -11,6 +11,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { generateRecipeAction } from './actions';
 import type { GenerateRecipeOutput } from "@/ai/flows/recipe-schemas";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from '@/context/AuthContext';
+import { auth } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 
 
 type Message = {
@@ -28,6 +32,9 @@ const initialMessages: Message[] = [
 ];
 
 export default function Home() {
+  const { user } = useAuth();
+  const router = useRouter();
+
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [userInput, setUserInput] = useState('');
   const [stage, setStage] = useState<ConversationStage>('get_preferences');
@@ -161,6 +168,11 @@ export default function Home() {
     }
   };
 
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push('/login');
+  };
+
   const startOver = () => {
     setMessages(initialMessages);
     setStage('get_preferences');
@@ -169,12 +181,23 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen bg-secondary/40">
-       <header className="text-center p-4 border-b bg-background">
-        <div className="inline-block bg-primary p-2 rounded-full mb-2 shadow-md">
-          <ChefHat className="h-8 w-8 text-primary-foreground" />
+       <header className="text-center p-4 border-b bg-background flex justify-between items-center">
+        <div></div>
+        <div className="flex flex-col items-center">
+          <div className="inline-block bg-primary p-2 rounded-full mb-2 shadow-md">
+            <ChefHat className="h-8 w-8 text-primary-foreground" />
+          </div>
+          <h1 className="text-2xl md:text-3xl font-bold font-headline text-gray-800">HuevitoChef</h1>
+          <p className="text-sm text-muted-foreground">Tu asistente de cocina personal.</p>
         </div>
-        <h1 className="text-2xl md:text-3xl font-bold font-headline text-gray-800">HuevitoChef</h1>
-        <p className="text-sm text-muted-foreground">Tu asistente de cocina personal.</p>
+        <div className="flex gap-2">
+            <Button variant="outline" size="icon" disabled>
+                <BookMarked />
+            </Button>
+            <Button variant="outline" size="icon" onClick={handleLogout}>
+                <LogOut />
+            </Button>
+        </div>
       </header>
       
       <main ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
