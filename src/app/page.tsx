@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
@@ -9,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { generateRecipeAction } from './actions';
+import { saveRecipe as saveRecipeAction } from './my-recipes/actions';
 import type { GenerateRecipeOutput } from "@/ai/flows/recipe-schemas";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from '@/context/AuthContext';
@@ -17,12 +19,14 @@ import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 
+type RecipeResult = GenerateRecipeOutput & { imageUrl: string };
 
 type Message = {
   id: number;
   sender: 'user' | 'bot';
   content: string | React.ReactNode;
   icon?: React.ReactNode;
+  recipeData?: RecipeResult;
 };
 
 type ConversationStage = 'start' | 'get_preferences' | 'get_ingredients' | 'get_cuisine' | 'get_time' | 'generating' | 'done' | 'error';
@@ -32,9 +36,7 @@ const initialMessages: Message[] = [
   { id: 2, sender: 'bot', content: 'Primero, ¿tienes alguna alergia o preferencia dietética? (ej. vegetariano, sin gluten, alergia a los frutos secos). Si no tienes ninguna, solo escribe "ninguna".', icon: <Salad /> },
 ];
 
-// Simple regex to check for presence of letters
 const hasLetters = (text: string) => /[a-zA-Z]/.test(text);
-
 
 export default function Home() {
   const { user } = useAuth();
@@ -120,7 +122,6 @@ export default function Home() {
             nextStage = 'get_time';
         } else {
             updatedRecipeData.maxPrepTime = time;
-            botMessageContent = "¡Genial! Estoy buscando la receta perfecta para ti. Esto puede tardar un momento...";
             nextStage = 'generating';
             setIsLoading(true);
             generateRecipe(updatedRecipeData);
@@ -137,17 +138,35 @@ export default function Home() {
         }, 500);
     }
     
-    if (nextStage === 'generating') {
+    if (nextStage === 'generating' && !botMessageContent) {
         setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'bot', content: "¡Genial! Estoy buscando la receta perfecta para ti. Esto puede tardar un momento...", icon: <Sparkles className="animate-pulse" /> }]);
-        setStage(nextStage);
     }
   };
 
-  const handleSaveRecipe = () => {
-    toast({
-        title: "Función no implementada",
-        description: "La capacidad de guardar recetas estará disponible pronto.",
-    });
+  const handleSaveRecipe = async (recipeToSave: RecipeResult | undefined) => {
+    if (!recipeToSave) {
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "No hay datos de receta para guardar.",
+        });
+        return;
+    }
+    
+    const resultId = await saveRecipeAction(recipeToSave);
+    
+    if (resultId) {
+        toast({
+            title: "¡Receta Guardada!",
+            description: "Tu receta ha sido guardada en tu colección.",
+        });
+    } else {
+        toast({
+            variant: "destructive",
+            title: "Error al Guardar",
+            description: "No se pudo guardar la receta. Inténtalo de nuevo.",
+        });
+    }
   }
 
   const generateRecipe = async (data: typeof recipeData) => {
@@ -164,42 +183,8 @@ export default function Home() {
         setMessages(prev => [...prev, { id: Date.now() + 2, sender: 'bot', content: `Hubo un error: ${result.error || 'No se pudo generar la receta.'}. ¿Quieres intentarlo de nuevo?`, icon: <ChefHat /> }]);
         setStage('error');
     } else {
-        const recipeResult = result.data as GenerateRecipeOutput & { imageUrl: string };
-        const recipeCard = (
-            <Card className="shadow-lg animate-in fade-in-50">
-                <CardHeader>
-                  <CardTitle className="font-headline text-3xl">{recipeResult.recipeName}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {recipeResult.imageUrl && (
-                    <div className="relative w-full aspect-video rounded-md overflow-hidden">
-                       <Image
-                          src={recipeResult.imageUrl}
-                          alt={recipeResult.recipeName}
-                          fill
-                          objectFit="cover"
-                          data-ai-hint="food recipe"
-                        />
-                    </div>
-                  )}
-                  <div>
-                    <h3 className="font-headline text-xl font-semibold mb-3 border-b pb-2">Ingredientes</h3>
-                    <p className="whitespace-pre-wrap text-muted-foreground">{recipeResult.ingredients}</p>
-                  </div>
-                  <div>
-                    <h3 className="font-headline text-xl font-semibold mb-3 border-b pb-2">Instrucciones</h3>
-                    <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground">{recipeResult.instructions}</p>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                    <Button onClick={handleSaveRecipe} className="w-full">
-                        <Save className="mr-2" />
-                        Guardar Receta
-                    </Button>
-                </CardFooter>
-              </Card>
-        );
-        setMessages(prev => [...prev, { id: Date.now() + 2, sender: 'bot', content: "¡Aquí tienes tu receta!", icon: <UtensilsCrossed /> }, { id: Date.now() + 3, sender: 'bot', content: recipeCard }]);
+        const recipeResult = result.data as RecipeResult;
+        setMessages(prev => [...prev, { id: Date.now() + 2, sender: 'bot', content: "¡Aquí tienes tu receta!", icon: <UtensilsCrossed />, recipeData: recipeResult }]);
         setStage('done');
     }
   };
@@ -215,6 +200,41 @@ export default function Home() {
     setRecipeData({ preferences: '', ingredients: '', cuisine: '', maxPrepTime: 0 });
   }
 
+  const RecipeCard = ({ recipe, onSave }: { recipe: RecipeResult; onSave: (recipe: RecipeResult) => void; }) => (
+      <Card className="shadow-lg animate-in fade-in-50">
+          <CardHeader>
+              <CardTitle className="font-headline text-3xl">{recipe.recipeName}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+              {recipe.imageUrl && (
+                  <div className="relative w-full aspect-video rounded-md overflow-hidden">
+                      <Image
+                          src={recipe.imageUrl}
+                          alt={recipe.recipeName}
+                          fill
+                          style={{objectFit: "cover"}}
+                          data-ai-hint="food recipe"
+                      />
+                  </div>
+              )}
+              <div>
+                  <h3 className="font-headline text-xl font-semibold mb-3 border-b pb-2">Ingredientes</h3>
+                  <p className="whitespace-pre-wrap text-muted-foreground">{recipe.ingredients}</p>
+              </div>
+              <div>
+                  <h3 className="font-headline text-xl font-semibold mb-3 border-b pb-2">Instrucciones</h3>
+                  <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground">{recipe.instructions}</p>
+              </div>
+          </CardContent>
+          <CardFooter>
+              <Button onClick={() => onSave(recipe)} className="w-full">
+                  <Save className="mr-2" />
+                  Guardar Receta
+              </Button>
+          </CardFooter>
+      </Card>
+  );
+
   return (
     <div className="flex flex-col h-screen bg-secondary/40">
        <header className="text-center p-4 border-b bg-background flex justify-between items-center">
@@ -227,9 +247,11 @@ export default function Home() {
           <p className="text-sm text-muted-foreground">Tu asistente de cocina personal.</p>
         </div>
         <div className="flex gap-2">
-            <Button variant="outline" size="icon" disabled>
-                <BookMarked />
-            </Button>
+            <Link href="/my-recipes" passHref>
+              <Button variant="outline" size="icon">
+                  <BookMarked />
+              </Button>
+            </Link>
             <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="mr-2" />
                 Salir
@@ -250,6 +272,8 @@ export default function Home() {
             <div className={`max-w-md lg:max-w-xl rounded-2xl px-4 py-3 shadow ${message.sender === 'user' ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-background text-foreground rounded-bl-none'}`}>
                  {typeof message.content === 'string' ? (
                      <p className="text-sm leading-relaxed">{message.content}</p>
+                 ) : message.recipeData ? (
+                     <RecipeCard recipe={message.recipeData} onSave={handleSaveRecipe} />
                  ) : (
                      message.content
                  )}
