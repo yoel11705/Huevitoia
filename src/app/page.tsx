@@ -1,240 +1,144 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { ChefHat, UtensilsCrossed, Sparkles, Soup, Globe, Timer, AlertTriangle, Salad, Info } from "lucide-react";
-
+import { ChefHat, UtensilsCrossed, Sparkles, User, Bot, Info, Send, CornerDownLeft, Salad, Soup, Globe, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import type { GenerateRecipeOutput } from "@/ai/flows/generate-recipe";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { generateRecipeAction } from './actions';
+import type { GenerateRecipeOutput } from "@/ai/flows/recipe-schemas";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const formSchema = z.object({
-  ingredients: z.string().min(10, {
-    message: "Por favor, enumera al menos algunos ingredientes.",
-  }),
-  cuisine: z.string(),
-  maxPrepTime: z.coerce.number().positive({
-    message: "El tiempo debe ser un número positivo.",
-  }).max(240, { message: "Seamos realistas, menos de 4 horas."}),
-  preferences: z.string().optional(),
-});
+
+type Message = {
+  id: number;
+  sender: 'user' | 'bot';
+  content: string | React.ReactNode;
+  icon?: React.ReactNode;
+};
+
+type ConversationStage = 'start' | 'get_preferences' | 'get_ingredients' | 'get_cuisine' | 'get_time' | 'generating' | 'done' | 'error';
+
+const initialMessages: Message[] = [
+  { id: 1, sender: 'bot', content: '¡Hola! Soy HuevitoChef. Estoy aquí para ayudarte a crear una receta deliciosa con los ingredientes que tienes en casa.', icon: <Salad /> },
+  { id: 2, sender: 'bot', content: 'Primero, ¿tienes alguna alergia o preferencia dietética? (ej. vegetariano, sin gluten, alergia a los frutos secos). Si no tienes ninguna, solo escribe "ninguna".', icon: <Salad /> },
+];
 
 export default function Home() {
-  const [recipe, setRecipe] = useState<GenerateRecipeOutput | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      ingredients: "",
-      cuisine: "Cualquiera",
-      maxPrepTime: 30,
-      preferences: "",
-    },
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [userInput, setUserInput] = useState('');
+  const [stage, setStage] = useState<ConversationStage>('get_preferences');
+  const [recipeData, setRecipeData] = useState({
+    preferences: '',
+    ingredients: '',
+    cuisine: '',
+    maxPrepTime: 0
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsLoading(true);
-    setRecipe(null);
-    setError(null);
+  useEffect(() => {
+    chatContainerRef.current?.scrollTo(0, chatContainerRef.current.scrollHeight);
+  }, [messages]);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userInput.trim()) return;
+
+    const userMessage: Message = { id: Date.now(), sender: 'user', content: userInput };
+    setMessages(prev => [...prev, userMessage]);
     
-    const result = await generateRecipeAction(values);
+    const currentInput = userInput;
+    setUserInput('');
+    
+    processUserInput(currentInput);
+  };
 
-    if (result.error) {
-      setError(result.error);
-    } else {
-      setRecipe(result.data);
+  const processUserInput = async (input: string) => {
+    let nextStage: ConversationStage = stage;
+    let botMessageContent: string = '';
+    let botIcon: React.ReactNode = null;
+    let updatedRecipeData = { ...recipeData };
+
+    switch (stage) {
+      case 'get_preferences':
+        updatedRecipeData.preferences = input;
+        botMessageContent = "¡Entendido! Ahora, por favor, dime qué ingredientes tienes. Sepáralos por comas (ej. pollo, arroz, brócoli).";
+        botIcon = <Soup />;
+        nextStage = 'get_ingredients';
+        break;
+      
+      case 'get_ingredients':
+        updatedRecipeData.ingredients = input;
+        botMessageContent = "Perfecto. ¿Qué estilo de cocina te apetece? (ej. Mexicana, Italiana, Asiática, o 'cualquiera')";
+        botIcon = <Globe />;
+        nextStage = 'get_cuisine';
+        break;
+
+      case 'get_cuisine':
+        updatedRecipeData.cuisine = input;
+        botMessageContent = "¡Suena bien! Por último, ¿cuál es el tiempo máximo de preparación en minutos? (ej. 30)";
+        botIcon = <Timer />;
+        nextStage = 'get_time';
+        break;
+      
+      case 'get_time':
+        const time = parseInt(input, 10);
+        if (isNaN(time) || time <= 0) {
+            botMessageContent = "Por favor, introduce un número válido para los minutos. ¿Cuánto tiempo tienes?";
+            nextStage = 'get_time';
+        } else {
+            updatedRecipeData.maxPrepTime = time;
+            botMessageContent = "¡Genial! Estoy buscando la receta perfecta para ti. Esto puede tardar un momento...";
+            nextStage = 'generating';
+            setIsLoading(true);
+            generateRecipe(updatedRecipeData);
+        }
+        break;
     }
+    
+    setRecipeData(updatedRecipeData);
+
+    if (nextStage !== 'generating') {
+        setTimeout(() => {
+            setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'bot', content: botMessageContent, icon: botIcon }]);
+            setStage(nextStage);
+        }, 500);
+    } else {
+        setMessages(prev => [...prev, { id: Date.now() + 1, sender: 'bot', content: botMessageContent, icon: <Sparkles className="animate-pulse" /> }]);
+        setStage(nextStage);
+    }
+  };
+
+  const generateRecipe = async (data: typeof recipeData) => {
+    const result = await generateRecipeAction({
+        preferences: data.preferences,
+        ingredients: data.ingredients,
+        cuisine: data.cuisine,
+        maxPrepTime: data.maxPrepTime,
+    });
+
     setIsLoading(false);
-  }
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <header className="text-center mb-12">
-        <div className="inline-block bg-primary p-4 rounded-full mb-4 shadow-md">
-          <ChefHat className="h-12 w-12 text-primary-foreground" />
-        </div>
-        <h1 className="text-4xl md:text-6xl font-bold font-headline text-gray-800">HuevitoChef</h1>
-        <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-          ¿No tienes idea de qué cocinar? Dame tus ingredientes y prepararé una deliciosa receta para ti en segundos.
-        </p>
-      </header>
-
-      <main className="grid md:grid-cols-2 gap-8 lg:gap-12">
-        <Card className="shadow-lg">
-          <CardHeader>
-            <CardTitle className="font-headline text-2xl">Crea Tu Receta</CardTitle>
-            <CardDescription>Dinos qué tienes y de qué tienes ganas.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <FormField
-                  control={form.control}
-                  name="ingredients"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2 font-semibold"><Soup size={18} /> Ingredientes</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="ej., pechuga de pollo, tomates, cebolla, ajo, aceite de oliva"
-                          className="min-h-[120px] resize-y"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Enumera los ingredientes que tienes, separados por comas.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="preferences"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-2 font-semibold"><Salad size={18} /> Alergias o Preferencias</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="ej., vegetariano, sin frutos secos, sin gluten"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Enumera cualquier restricción o preferencia dietética.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <div className="grid sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="cuisine"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2 font-semibold"><Globe size={18} /> Estilo de Cocina</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecciona un estilo" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="Cualquiera">Cualquiera</SelectItem>
-                            <SelectItem value="Mexicana">Mexicana</SelectItem>
-                            <SelectItem value="Italiana">Italiana</SelectItem>
-                            <SelectItem value="Asiática">Asiática</SelectItem>
-                            <SelectItem value="Americana">Americana</SelectItem>
-                            <SelectItem value="Mediterránea">Mediterránea</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="maxPrepTime"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2 font-semibold"><Timer size={18} /> Tiempo Máx. (min)</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="e.g., 30" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <Button type="submit" disabled={isLoading} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground font-bold text-lg py-6">
-                  {isLoading ? 'Generando...' : 'Generar Receta'}
-                  <UtensilsCrossed className="ml-2 h-5 w-5" />
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-
-        <div className="flex flex-col">
-          {isLoading && (
-            <Card className="shadow-lg flex-grow">
-              <CardHeader>
-                <Skeleton className="h-8 w-3/4" />
-                <Skeleton className="h-4 w-1/2 mt-2" />
-              </CardHeader>
-              <CardContent className="space-y-8">
-                 <Skeleton className="w-full h-[200px] rounded-md" />
-                <div>
-                  <Skeleton className="h-6 w-1/4 mb-4" />
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-3/4" />
-                </div>
-                <div>
-                  <Skeleton className="h-6 w-1/4 mb-4" />
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-full mb-2" />
-                  <Skeleton className="h-4 w-2/3" />
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {error && (
-             <Alert variant="destructive" className="flex-grow">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          {recipe && (
-             <Card className="shadow-lg animate-in fade-in-50 flex-grow">
+    if (result.error || !result.data) {
+        setMessages(prev => [...prev, { id: Date.now() + 2, sender: 'bot', content: `Hubo un error: ${result.error || 'No se pudo generar la receta.'}. ¿Quieres intentarlo de nuevo?`, icon: <ChefHat /> }]);
+        setStage('error');
+    } else {
+        const recipeResult = result.data as GenerateRecipeOutput & { imageUrl: string };
+        const recipeCard = (
+            <Card className="shadow-lg animate-in fade-in-50">
                 <CardHeader>
-                  <CardTitle className="font-headline text-3xl">{recipe.recipeName}</CardTitle>
-                  <CardDescription className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-primary" />
-                    Generado solo para ti por HuevitoChef AI.
-                  </CardDescription>
+                  <CardTitle className="font-headline text-3xl">{recipeResult.recipeName}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {recipe.imageUrl && (
+                  {recipeResult.imageUrl && (
                     <div className="relative w-full aspect-video rounded-md overflow-hidden">
                        <Image
-                          src={recipe.imageUrl}
-                          alt={recipe.recipeName}
+                          src={recipeResult.imageUrl}
+                          alt={recipeResult.recipeName}
                           layout="fill"
                           objectFit="cover"
                           data-ai-hint="food recipe"
@@ -243,32 +147,109 @@ export default function Home() {
                   )}
                   <div>
                     <h3 className="font-headline text-xl font-semibold mb-3 border-b pb-2">Ingredientes</h3>
-                    <p className="whitespace-pre-wrap text-muted-foreground">{recipe.ingredients}</p>
+                    <p className="whitespace-pre-wrap text-muted-foreground">{recipeResult.ingredients}</p>
                   </div>
                   <div>
                     <h3 className="font-headline text-xl font-semibold mb-3 border-b pb-2">Instrucciones</h3>
-                    <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground">{recipe.instructions}</p>
+                    <p className="whitespace-pre-wrap leading-relaxed text-muted-foreground">{recipeResult.instructions}</p>
                   </div>
                 </CardContent>
               </Card>
-          )}
+        );
+        setMessages(prev => [...prev, { id: Date.now() + 2, sender: 'bot', content: "¡Aquí tienes tu receta!", icon: <UtensilsCrossed /> }, { id: Date.now() + 3, sender: 'bot', content: recipeCard }]);
+        setStage('done');
+    }
+  };
 
-          {!isLoading && !recipe && !error && (
-            <div className="flex flex-col items-center justify-center h-full text-center p-8 border-2 border-dashed rounded-lg bg-card">
-              <div className="p-4 bg-secondary rounded-full mb-4">
-                <ChefHat className="w-16 h-16 text-muted-foreground/50" />
-              </div>
-              <h3 className="text-2xl font-semibold font-headline text-muted-foreground">¿Listo para Cocinar?</h3>
-              <p className="text-muted-foreground mt-2 max-w-xs">Tu deliciosa receta generada por IA aparecerá aquí.</p>
-            </div>
-          )}
+  const startOver = () => {
+    setMessages(initialMessages);
+    setStage('get_preferences');
+    setRecipeData({ preferences: '', ingredients: '', cuisine: '', maxPrepTime: 0 });
+  }
+
+  return (
+    <div className="flex flex-col h-screen bg-secondary/40">
+       <header className="text-center p-4 border-b bg-background">
+        <div className="inline-block bg-primary p-2 rounded-full mb-2 shadow-md">
+          <ChefHat className="h-8 w-8 text-primary-foreground" />
         </div>
+        <h1 className="text-2xl md:text-3xl font-bold font-headline text-gray-800">HuevitoChef</h1>
+        <p className="text-sm text-muted-foreground">Tu asistente de cocina personal.</p>
+      </header>
+      
+      <main ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+        {messages.map((message) => (
+          <div key={message.id} className={`flex items-end gap-3 ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+            {message.sender === 'bot' && (
+              <Avatar className="h-10 w-10 border-2 border-primary/50">
+                <AvatarFallback className="bg-primary text-primary-foreground">
+                    <Bot size={20} />
+                </AvatarFallback>
+              </Avatar>
+            )}
+            <div className={`max-w-md lg:max-w-xl rounded-2xl px-4 py-3 shadow ${message.sender === 'user' ? 'bg-primary text-primary-foreground rounded-br-none' : 'bg-background text-foreground rounded-bl-none'}`}>
+                 {typeof message.content === 'string' ? (
+                     <p className="text-sm leading-relaxed">{message.content}</p>
+                 ) : (
+                     message.content
+                 )}
+            </div>
+             {message.sender === 'user' && (
+              <Avatar className="h-10 w-10">
+                <AvatarFallback>
+                    <User size={20} />
+                </AvatarFallback>
+              </Avatar>
+            )}
+          </div>
+        ))}
+        {isLoading && (
+            <div className="flex items-end gap-3 justify-start">
+                 <Avatar className="h-10 w-10 border-2 border-primary/50">
+                    <AvatarFallback className="bg-primary text-primary-foreground">
+                        <Bot size={20} />
+                    </AvatarFallback>
+                </Avatar>
+                <div className="max-w-md lg:max-w-xl rounded-2xl px-4 py-3 shadow bg-background text-foreground rounded-bl-none">
+                   <div className="flex items-center gap-2">
+                     <Skeleton className="w-2 h-2 rounded-full animate-bounce" />
+                     <Skeleton className="w-2 h-2 rounded-full animate-bounce delay-150" />
+                     <Skeleton className="w-2 h-2 rounded-full animate-bounce delay-300" />
+                   </div>
+                </div>
+            </div>
+        )}
       </main>
-      <footer className="text-center mt-12">
-        <Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-2">
-          <Info size={16} />
-          ¿Cómo funciona esto?
-        </Link>
+
+      <footer className="p-4 bg-background border-t">
+        <div className="container mx-auto">
+          {stage === 'done' || stage === 'error' ? (
+             <Button onClick={startOver} className="w-full">
+                <Sparkles className="mr-2" />
+                Crear una nueva receta
+             </Button>
+          ) : (
+            <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+              <Input
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                placeholder="Escribe tu respuesta aquí..."
+                autoFocus
+                disabled={isLoading}
+                className="flex-1"
+              />
+              <Button type="submit" size="icon" disabled={isLoading || !userInput.trim()}>
+                <Send />
+              </Button>
+            </form>
+          )}
+           <div className="text-center mt-3">
+             <Link href="/about" className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-1">
+                <Info size={12} />
+                ¿Cómo funciona esto?
+             </Link>
+           </div>
+        </div>
       </footer>
     </div>
   );
