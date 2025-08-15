@@ -19,26 +19,6 @@ export async function generateRecipe(input: GenerateRecipeInput): Promise<Genera
   return result;
 }
 
-const prompt = ai.definePrompt({
-  name: 'generateRecipePrompt',
-  input: {schema: GenerateRecipeInputSchema},
-  output: {schema: GenerateRecipeOutputSchema},
-  prompt: `You are a recipe creation AI. Given a list of ingredients, a cuisine style, a maximum preparation time, and optional dietary preferences, your task is to generate a recipe that fits these constraints. 
-
-You must generate the output in Spanish.
-
-The user has provided the following:
-- Ingredients: {{{ingredients}}}
-- Cuisine Style: {{{cuisine}}}
-- Max Prep Time: {{{maxPrepTime}}} minutes
-{{#if preferences}}
-- Dietary Preferences/Allergies: {{{preferences}}}
-{{/if}}
-
-Please generate a creative and delicious recipe based on this information. The entire output, including the recipe name, ingredients, and instructions, MUST be in Spanish.
-`,
-});
-
 const generateRecipeFlow = ai.defineFlow(
   {
     name: 'generateRecipeFlow',
@@ -46,7 +26,23 @@ const generateRecipeFlow = ai.defineFlow(
     outputSchema: GenerateRecipeOutputSchema.extend({ imageUrl: z.string() }),
   },
   async input => {
-    const {output} = await prompt(input);
+    
+    const { output } = await ai.generate({
+        model: 'googleai/gemini-2.0-flash',
+        output: { schema: GenerateRecipeOutputSchema },
+        prompt: `You are a recipe creation AI. Given a list of ingredients, a cuisine style, a maximum preparation time, and optional dietary preferences, your task is to generate a recipe that fits these constraints.
+
+The user has provided the following:
+- Ingredients: ${input.ingredients}
+- Cuisine Style: ${input.cuisine}
+- Max Prep Time: ${input.maxPrepTime} minutes
+${input.preferences ? `- Dietary Preferences/Allergies: ${input.preferences}`: ''}
+
+Please generate a creative and delicious recipe based on this information. The entire output, including the recipe name, ingredients, and instructions, MUST be in Spanish.
+`,
+    });
+
+
     if (!output) {
       throw new Error("Failed to generate recipe.");
     }
